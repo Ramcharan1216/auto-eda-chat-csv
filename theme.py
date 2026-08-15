@@ -1,4 +1,6 @@
 ﻿import streamlit as st
+import plotly.graph_objects as go
+import plotly.io as pio
 
 CUSTOM_CSS = """
 <style>
@@ -6,6 +8,10 @@ CUSTOM_CSS = """
 
     html, body, [class*="css"] {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .stApp {
+        background-color: #f5f5f7;
     }
 
     .main .block-container {
@@ -49,6 +55,13 @@ CUSTOM_CSS = """
         border-radius: 50%;
         background: #34c759;
         box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.15);
+    }
+
+    .hero-divider {
+        height: 3px;
+        background: linear-gradient(90deg, #0071e3, transparent);
+        border-radius: 2px;
+        margin: 4px 0 20px 0;
     }
 
     .section-title {
@@ -159,6 +172,21 @@ CUSTOM_CSS = """
         border-bottom-left-radius: 4px;
     }
 
+    [data-testid="stChatMessage"] {
+        border-radius: 14px;
+        border: 1px solid #e5e5ea;
+        background: #ffffff;
+    }
+    [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"],
+    [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] * {
+        color: #1d1d1f !important;
+    }
+
+    [data-testid="stExpander"] summary,
+    [data-testid="stExpander"] summary * {
+        color: #1d1d1f !important;
+    }
+
     .stAlert {
         border-radius: 12px;
         border: none;
@@ -192,5 +220,22 @@ CUSTOM_CSS = """
 </style>
 """
 
+
 def apply_theme():
     st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+
+
+_template = go.layout.Template()
+_template.layout = go.Layout(
+    colorway=["#0071e3", "#34c759", "#ff9500", "#af52de", "#ff3b30", "#5ac8fa"],
+    font=dict(family="Inter, sans-serif", color="#1d1d1f", size=13),
+    title=dict(font=dict(family="Inter, sans-serif", size=16, color="#1d1d1f")),
+    paper_bgcolor="#ffffff",
+    plot_bgcolor="#ffffff",
+    xaxis=dict(gridcolor="#e5e5ea", zerolinecolor="#e5e5ea", linecolor="#e5e5ea"),
+    yaxis=dict(gridcolor="#e5e5ea", zerolinecolor="#e5e5ea", linecolor="#e5e5ea"),
+    legend=dict(bgcolor="rgba(0,0,0,0)"),
+    margin=dict(t=50, l=10, r=10, b=10),
+)
+pio.templates["auto_eda"] = _template
+pio.templates.default = "auto_eda"
