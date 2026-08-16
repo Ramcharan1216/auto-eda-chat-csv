@@ -2,7 +2,7 @@
 
 An app that takes any raw CSV (Kaggle datasets, exports, whatever) and automatically produces a full exploratory data analysis — dataset-agnostic column profiling, auto-selected charts, and a natural-language chat interface that writes and safely executes pandas code to answer questions about your actual data.
 
-**[Live demo →](https://auto-eda-chat-csv-b5ekmmubbz5pgcpwgd6mks.streamlit.app)**
+**[Live demo →](https://auto-eda-chat-csv-tzgey5bjzpdcrdtgfdp89m.streamlit.app/)**
 
 ---
 
