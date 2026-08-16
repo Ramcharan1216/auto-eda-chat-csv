@@ -11,7 +11,7 @@ CUSTOM_CSS = """
     }
 
     .stApp {
-        background-color: #f5f5f7;
+        background-color: #f5f5f7 !important;
     }
 
     .main .block-container {
