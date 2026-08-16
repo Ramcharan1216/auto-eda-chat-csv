@@ -14,6 +14,10 @@ CUSTOM_CSS = """
         background-color: #f5f5f7 !important;
     }
 
+    h1, h2, h3 {
+        color: #000000 !important;
+    }
+
     .main .block-container {
         padding-top: 2rem;
         padding-bottom: 4rem;
@@ -24,13 +28,13 @@ CUSTOM_CSS = """
         font-size: 1.5rem;
         font-weight: 700;
         letter-spacing: -0.03em;
-        color: #1d1d1f;
+        color: #000000;
         margin-bottom: 0.25rem;
     }
 
     .brand-subtitle {
         font-size: 0.875rem;
-        color: #6e6e73;
+        color: #000000;
         margin-bottom: 1.5rem;
     }
 
@@ -40,9 +44,9 @@ CUSTOM_CSS = """
         gap: 0.5rem;
         font-size: 0.8125rem;
         font-weight: 500;
-        color: #0071e3;
+        color: #000000;
         background: #f5f5f7;
-        border: 1px solid #e5e5ea;
+        border: 1px solid #000000;
         border-radius: 999px;
         padding: 0.4rem 0.85rem;
         margin-bottom: 1.25rem;
@@ -59,7 +63,7 @@ CUSTOM_CSS = """
 
     .hero-divider {
         height: 3px;
-        background: linear-gradient(90deg, #0071e3, transparent);
+        background: linear-gradient(90deg, #000000, transparent);
         border-radius: 2px;
         margin: 4px 0 20px 0;
     }
@@ -67,14 +71,14 @@ CUSTOM_CSS = """
     .section-title {
         font-size: 0.9375rem;
         font-weight: 600;
-        color: #1d1d1f;
+        color: #000000;
         margin-bottom: 0.75rem;
         letter-spacing: -0.01em;
     }
 
     div[data-testid="stMetric"] {
         background: #ffffff;
-        border: 1px solid #e5e5ea;
+        border: 1px solid #000000;
         border-radius: 14px;
         padding: 1rem;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
@@ -85,25 +89,25 @@ CUSTOM_CSS = """
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        color: #6e6e73;
+        color: #000000;
     }
 
     div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
         font-size: 1.75rem;
         font-weight: 700;
-        color: #1d1d1f;
+        color: #000000;
     }
 
     div[data-testid="stTab"] {
         font-size: 0.875rem;
         font-weight: 500;
-        color: #6e6e73;
+        color: #000000;
         padding: 0.75rem 1rem;
     }
 
     div[data-testid="stTab"] p,
     div[data-testid="stTab"] span {
-        color: #6e6e73 !important;
+        color: #000000 !important;
     }
 
     div[data-testid="stTab"][aria-selected="true"] p,
@@ -118,7 +122,7 @@ CUSTOM_CSS = """
 
     [data-testid="stSidebar"] {
         background: #fbfbfd;
-        border-right: 1px solid #e5e5ea;
+        border-right: 1px solid #000000;
     }
 
     [data-testid="stSidebar"] .brand-mark {
@@ -128,7 +132,7 @@ CUSTOM_CSS = """
 
     .stFileUploader > section,
     div[data-testid="stFileUploader"] > section {
-        border: 2px dashed #d1d1d6;
+        border: 2px dashed #000000;
         border-radius: 16px;
         background: #fbfbfd;
         padding: 2rem 1rem;
@@ -167,35 +171,39 @@ CUSTOM_CSS = """
 
     .chat-assistant {
         background: #f5f5f7;
-        color: #1d1d1f;
-        border: 1px solid #e5e5ea;
+        color: #000000;
+        border: 1px solid #000000;
         border-bottom-left-radius: 4px;
     }
 
     [data-testid="stChatMessage"] {
         border-radius: 14px;
-        border: 1px solid #e5e5ea;
+        border: 1px solid #000000;
         background: #ffffff;
     }
     [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"],
     [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] * {
-        color: #1d1d1f !important;
+        color: #000000 !important;
     }
 
     [data-testid="stExpander"] summary,
     [data-testid="stExpander"] summary * {
-        color: #1d1d1f !important;
+        color: #000000 !important;
+    }
+
+    [data-testid="stExpander"] {
+        border: 1px solid #000000 !important;
     }
 
     .stAlert {
         border-radius: 12px;
-        border: none;
+        border: 1px solid #000000;
         padding: 0.85rem 1rem;
         font-size: 0.9rem;
     }
 
     .stDataFrame {
-        border: 1px solid #e5e5ea;
+        border: 1px solid #000000;
         border-radius: 14px;
         overflow: hidden;
     }
@@ -208,8 +216,8 @@ CUSTOM_CSS = """
     }
 
     button[kind="secondary"] {
-        border: 1px solid #e5e5ea;
-        color: #1d1d1f;
+        border: 1px solid #000000;
+        color: #000000;
         border-radius: 10px;
         font-weight: 500;
     }
@@ -228,12 +236,12 @@ def apply_theme():
 _template = go.layout.Template()
 _template.layout = go.Layout(
     colorway=["#0071e3", "#34c759", "#ff9500", "#af52de", "#ff3b30", "#5ac8fa"],
-    font=dict(family="Inter, sans-serif", color="#1d1d1f", size=13),
-    title=dict(font=dict(family="Inter, sans-serif", size=16, color="#1d1d1f")),
+    font=dict(family="Inter, sans-serif", color="#000000", size=13),
+    title=dict(font=dict(family="Inter, sans-serif", size=16, color="#000000")),
     paper_bgcolor="#ffffff",
     plot_bgcolor="#ffffff",
-    xaxis=dict(gridcolor="#e5e5ea", zerolinecolor="#e5e5ea", linecolor="#e5e5ea"),
-    yaxis=dict(gridcolor="#e5e5ea", zerolinecolor="#e5e5ea", linecolor="#e5e5ea"),
+    xaxis=dict(gridcolor="#e5e5ea", zerolinecolor="#000000", linecolor="#000000"),
+    yaxis=dict(gridcolor="#e5e5ea", zerolinecolor="#000000", linecolor="#000000"),
     legend=dict(bgcolor="rgba(0,0,0,0)"),
     margin=dict(t=50, l=10, r=10, b=10),
 )
