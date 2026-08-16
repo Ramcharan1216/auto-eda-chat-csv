@@ -215,11 +215,26 @@ CUSTOM_CSS = """
         padding: 0.5rem 1.1rem;
     }
 
+    
     button[kind="secondary"] {
+        background: #ffffff !important;
         border: 1px solid #000000;
-        color: #000000;
+        color: #000000 !important;
         border-radius: 10px;
         font-weight: 500;
+    }
+
+    [data-testid="stChatInput"] {
+        background: #ffffff !important;
+        border: 1px solid #000000 !important;
+        border-radius: 12px;
+    }
+    [data-testid="stChatInput"] textarea {
+        color: #000000 !important;
+        background: transparent !important;
+    }
+    [data-testid="stChatInput"] textarea::placeholder {
+        color: #6e6e73 !important;
     }
 
     #MainMenu {visibility: hidden;}
