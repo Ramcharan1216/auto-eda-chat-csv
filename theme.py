@@ -246,6 +246,20 @@ CUSTOM_CSS = """
         color: #000000 !important;
     }
 
+    [data-testid="stFileUploaderDropzoneInstructions"],
+    [data-testid="stFileUploaderDropzoneInstructions"] * {
+        color: #000000 !important;
+    }
+
+    [data-testid="stChatInputSubmitButton"] {
+        color: #000000 !important;
+        background: transparent !important;
+    }
+    [data-testid="stChatInputSubmitButton"] svg {
+        fill: #000000 !important;
+        color: #000000 !important;
+    }
+
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
