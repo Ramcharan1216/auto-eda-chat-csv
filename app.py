@@ -80,7 +80,7 @@ def render_column_table(profile):
                 "Type": KIND_LABELS.get(cp.kind, cp.kind),
                 "Missing %": cp.missing_pct,
                 "Unique values": cp.n_unique,
-                "Flags": "; ".join(cp.warnings) if cp.warnings else "—",
+                "Flags": "; ".join(cp.warnings) if cp.warnings else "â€”",
             })
         st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
@@ -201,16 +201,16 @@ def main():
 
 
    with st.sidebar:
-    st.markdown('<div class="brand-mark">AUTO · EDA</div>', unsafe_allow_html=True)
+    st.markdown('<div class="brand-mark">AUTO Â· EDA</div>', unsafe_allow_html=True)
     st.subheader("?? Settings")
 
     env_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY", "")
 
     if env_key:
-        # Key found in .env — use it silently, no input box shown.
+        # Key found in .env â€” use it silently, no input box shown.
         st.session_state["gemini_api_key"] = env_key
     else:
-        # No key configured — only then show the input.
+        # No key configured â€” only then show the input.
         api_key_input = st.text_input(
             "Gemini API key", type="password",
             help="Get one free at aistudio.google.com/apikey",
@@ -221,7 +221,7 @@ def main():
     uploaded_file = st.file_uploader("Upload your CSV", type=["csv"])
 
     if uploaded_file is None:
-        st.info("?? Upload a CSV to get started. Try any Kaggle dataset — Titanic, house prices, customer churn, etc.")
+        st.info("?? Upload a CSV to get started. Try any Kaggle dataset â€” Titanic, house prices, customer churn, etc.")
         return
 
     with st.spinner("Reading and profiling your data..."):
