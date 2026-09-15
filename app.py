@@ -1,4 +1,4 @@
-﻿"""
+"""
 app.py
 ------
 Auto-EDA app: upload any CSV -> profiling report, auto-charts, and a
@@ -22,19 +22,22 @@ from chart_generator import generate_charts
 from csv_loader import load_csv_robust
 from suggested_questions import generate_suggested_questions
 from llm_query_engine import answer_question
+from theme import apply_theme
+
 
 load_dotenv(encoding="utf-8-sig")
 
-st.set_page_config(page_title="Auto-EDA: Analyze Any CSV", page_icon="📊", layout="wide")
+st.set_page_config(page_title="Auto-EDA", layout="wide")
+apply_theme()
 st.markdown(theme.CUSTOM_CSS, unsafe_allow_html=True)
 
 KIND_LABELS = {
-    NUMERIC: "🔢 Numeric",
-    CATEGORICAL: "🏷️ Categorical",
-    DATETIME: "📅 Datetime",
-    BOOLEAN: "✅ Boolean",
-    TEXT: "📝 Text",
-    ID_LIKE: "🔑 Identifier",
+    NUMERIC: "?? Numeric",
+    CATEGORICAL: "??? Categorical",
+    DATETIME: "?? Datetime",
+    BOOLEAN: "? Boolean",
+    TEXT: "?? Text",
+    ID_LIKE: "?? Identifier",
 }
 
 
@@ -49,7 +52,7 @@ def load_csv_cached(file_bytes: bytes, file_name: str):
 
 def render_overview(profile):
     with st.container(border=True):
-        st.markdown("##### Dataset Summary")
+       st.markdown('<div class="section-title">Dataset Summary</div>', unsafe_allow_html=True)
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Rows", f"{profile.n_rows:,}")
         c2.metric("Columns", profile.n_cols)
@@ -77,7 +80,7 @@ def render_column_table(profile):
                 "Type": KIND_LABELS.get(cp.kind, cp.kind),
                 "Missing %": cp.missing_pct,
                 "Unique values": cp.n_unique,
-                "Flags": "; ".join(cp.warnings) if cp.warnings else "—",
+                "Flags": "; ".join(cp.warnings) if cp.warnings else "�",
             })
         st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
@@ -107,11 +110,26 @@ def _render_answer_result(result):
     elif isinstance(result, pd.DataFrame):
         st.dataframe(result, use_container_width=True)
     elif isinstance(result, float):
-        st.metric("Answer", f"{result:,.4f}")
-    elif isinstance(result, int):
-        st.metric("Answer", f"{result:,}")
-    else:
-        st.write(result)
+        cols = st.columns(2)
+cols[0].markdown(
+    f"""
+    <div class="metric-card">
+        <div class="metric-label">Rows</div>
+        <div class="metric-value">{df.shape[0]:,}</div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+cols[1].markdown(
+    f"""
+    <div class="metric-card">
+        <div class="metric-label">Columns</div>
+        <div class="metric-value">{df.shape[1]}</div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+)
 
 
 def _ask_and_store(api_key, df, profile, question):
@@ -156,9 +174,9 @@ def render_chat(df, profile, dataset_key):
         _ask_and_store(api_key, df, profile, question)
 
     for entry in st.session_state.chat_history:
-        with st.chat_message("user", avatar="🧑"):
+        with st.chat_message("user", avatar="??"):
             st.write(entry["question"])
-        with st.chat_message("assistant", avatar="📊"):
+        with st.chat_message("assistant", avatar="??"):
             if entry["success"]:
                 _render_answer_result(entry["result"])
                 with st.expander("Show generated code"):
@@ -171,17 +189,31 @@ def render_chat(df, profile, dataset_key):
 
 
 def main():
-    st.title("📊 Auto-EDA: Analyze Any CSV")
-    st.caption("Upload a raw CSV (e.g. from Kaggle) and get an instant, dataset-agnostic exploratory analysis.")
-    st.markdown('<div class="hero-divider"></div>', unsafe_allow_html=True)
+    st.markdown(
+    """
+    <div style="margin-bottom: 1.5rem;">
+        <div class="brand-mark">Auto-EDA</div>
+        <div class="brand-subtitle">Upload a CSV and get an instant analysis</div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
-    with st.sidebar:
-        st.markdown('<div class="brand-mark">AUTO · EDA</div>', unsafe_allow_html=True)
-        st.subheader("⚙️ Settings")
-        env_key = os.environ.get("GEMINI_API_KEY", "")
+
+   with st.sidebar:
+    st.markdown('<div class="brand-mark">AUTO � EDA</div>', unsafe_allow_html=True)
+    st.subheader("?? Settings")
+
+    env_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY", "")
+
+    if env_key:
+        # Key found in .env � use it silently, no input box shown.
+        st.session_state["gemini_api_key"] = env_key
+    else:
+        # No key configured � only then show the input.
         api_key_input = st.text_input(
-            "Gemini API key", type="password", value=env_key,
-            help="Loaded automatically from .env if present. Get one at aistudio.google.com/apikey",
+            "Gemini API key", type="password",
+            help="Get one free at aistudio.google.com/apikey",
         )
         if api_key_input:
             st.session_state["gemini_api_key"] = api_key_input
@@ -189,7 +221,7 @@ def main():
     uploaded_file = st.file_uploader("Upload your CSV", type=["csv"])
 
     if uploaded_file is None:
-        st.info("👆 Upload a CSV to get started. Try any Kaggle dataset — Titanic, house prices, customer churn, etc.")
+        st.info("?? Upload a CSV to get started. Try any Kaggle dataset � Titanic, house prices, customer churn, etc.")
         return
 
     with st.spinner("Reading and profiling your data..."):
@@ -220,7 +252,7 @@ def main():
     )
 
     tab1, tab2, tab3, tab4 = st.tabs(
-        ["📋 Overview", "📊 Auto-Generated Charts", "🔍 Raw Data", "💬 Chat with your Data"]
+        ["?? Overview", "?? Auto-Generated Charts", "?? Raw Data", "?? Chat with your Data"]
     )
 
     with tab1:
