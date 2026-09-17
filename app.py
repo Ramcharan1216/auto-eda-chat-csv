@@ -1,4 +1,4 @@
-﻿"""
+"""
 app.py
 ------
 Auto-EDA app: upload any CSV -> profiling report, auto-charts, and a
@@ -9,21 +9,14 @@ Run locally with:
     streamlit run app.py
 """
 
-import os
-
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-from dotenv import load_dotenv
 
 import theme
 from data_profiler import profile_dataset, NUMERIC, CATEGORICAL, DATETIME, BOOLEAN, TEXT, ID_LIKE
 from chart_generator import generate_charts
-from csv_loader import load_csv_robust
-from suggested_questions import generate_suggested_questions
 from llm_query_engine import answer_question
-
-load_dotenv(encoding="utf-8-sig")
 
 st.set_page_config(page_title="Auto-EDA: Analyze Any CSV", page_icon="📊", layout="wide")
 st.markdown(theme.CUSTOM_CSS, unsafe_allow_html=True)
@@ -39,12 +32,8 @@ KIND_LABELS = {
 
 
 @st.cache_data(show_spinner=False)
-def load_csv_cached(file_bytes: bytes, file_name: str):
-    """Cache key is the raw bytes + name, not the UploadedFile object itself
-    (which isn't hashable in a stable way across reruns)."""
-    import types
-    fake_file = types.SimpleNamespace(getvalue=lambda: file_bytes)
-    return load_csv_robust(fake_file)
+def load_csv(uploaded_file) -> pd.DataFrame:
+    return pd.read_csv(uploaded_file)
 
 
 def render_overview(profile):
@@ -114,15 +103,6 @@ def _render_answer_result(result):
         st.write(result)
 
 
-def _ask_and_store(api_key, df, profile, question):
-    """Shared by both the free-text chat input and the suggested-question
-    buttons, so asking a suggested question behaves identically to typing
-    it. Prior (successful) turns are passed as context for follow-ups."""
-    with st.spinner("Writing and running pandas code..."):
-        outcome = answer_question(api_key, df, profile, question, history=st.session_state.chat_history)
-    st.session_state.chat_history.insert(0, {"question": question, **outcome})
-
-
 def render_chat(df, profile, dataset_key):
     st.caption(
         "Ask a question in plain English. The LLM writes pandas code to answer it, "
@@ -134,6 +114,8 @@ def render_chat(df, profile, dataset_key):
         st.info("Enter your Gemini API key in the sidebar to use the chat feature.")
         return
 
+    # Reset chat history whenever the uploaded dataset changes -- old Q&A
+    # about a previous file would be confusing (and wrong) to keep showing.
     if st.session_state.get("chat_dataset_key") != dataset_key:
         st.session_state.chat_history = []
         st.session_state.chat_dataset_key = dataset_key
@@ -141,24 +123,18 @@ def render_chat(df, profile, dataset_key):
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    if not st.session_state.chat_history:
-        suggestions = generate_suggested_questions(profile)
-        if suggestions:
-            st.caption("Try asking:")
-            cols = st.columns(len(suggestions))
-            for col, suggestion in zip(cols, suggestions):
-                if col.button(suggestion, key=f"suggestion_{suggestion}", use_container_width=True):
-                    _ask_and_store(api_key, df, profile, suggestion)
-                    st.rerun()
-
     question = st.chat_input("e.g. What's the average value by category?")
     if question:
-        _ask_and_store(api_key, df, profile, question)
+        with st.spinner("Writing and running pandas code..."):
+            outcome = answer_question(api_key, df, profile, question)
+        # Newest question goes to the FRONT of the list so it renders at
+        # the top, pushing older question/answer pairs down below it.
+        st.session_state.chat_history.insert(0, {"question": question, **outcome})
 
     for entry in st.session_state.chat_history:
-        with st.chat_message("user", avatar="🧑"):
+        with st.chat_message("user"):
             st.write(entry["question"])
-        with st.chat_message("assistant", avatar="📊"):
+        with st.chat_message("assistant"):
             if entry["success"]:
                 _render_answer_result(entry["result"])
                 with st.expander("Show generated code"):
@@ -176,18 +152,13 @@ def main():
     st.markdown('<div class="hero-divider"></div>', unsafe_allow_html=True)
 
     with st.sidebar:
-        st.markdown('<div class="brand-mark">AUTO · EDA</div>', unsafe_allow_html=True)
         st.subheader("⚙️ Settings")
-        env_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY", "")
-        if env_key:
-            st.session_state["gemini_api_key"] = env_key
-        else:
-            api_key_input = st.text_input(
-                "Gemini API key", type="password",
-                help="Get one free at aistudio.google.com/apikey",
-            )
-            if api_key_input:
-                st.session_state["gemini_api_key"] = api_key_input
+        api_key_input = st.text_input(
+            "Gemini API key", type="password",
+            help="Needed for the 'Chat with your Data' tab. Get one at aistudio.google.com/apikey",
+        )
+        if api_key_input:
+            st.session_state["gemini_api_key"] = api_key_input
 
     uploaded_file = st.file_uploader("Upload your CSV", type=["csv"])
 
@@ -196,25 +167,11 @@ def main():
         return
 
     with st.spinner("Reading and profiling your data..."):
-        load_result = load_csv_cached(uploaded_file.getvalue(), uploaded_file.name)
-
-    if load_result.error:
-        st.error(f"Couldn't load this file: {load_result.error}")
-        st.caption("Try re-saving the file as UTF-8 CSV, or double-check it's a valid CSV export.")
-        return
-
-    df = load_result.df
-
-    try:
+        df = load_csv(uploaded_file)
         profile = profile_dataset(df)
-    except Exception as e:
-        st.error(f"Something went wrong while analyzing this file: {e}")
-        st.caption("If this keeps happening on a specific file, it may have an unusual structure worth checking manually.")
-        return
 
-    if load_result.is_large:
-        st.info(f"This is a large dataset ({load_result.encoding_used} encoding, {len(df):,} rows) -- analysis may take a bit longer than usual.")
-
+    # Unique per uploaded file -- used to detect "the user swapped datasets"
+    # so we can reset stale chat history in render_chat().
     dataset_key = f"{uploaded_file.name}-{uploaded_file.size}"
 
     st.markdown(
