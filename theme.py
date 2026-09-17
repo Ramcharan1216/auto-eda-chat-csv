@@ -262,7 +262,7 @@ CUSTOM_CSS = """
 
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-    header {visibility: hidden;}
+    [data-testid="stToolbarActions"] {visibility: hidden;}
 </style>
 """
 

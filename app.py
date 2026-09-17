@@ -301,14 +301,12 @@ def render_sidebar():
     when available), and a History section covering both past uploads
     and each upload's chat log."""
     with st.sidebar:
-        top_l, top_r = st.columns([3, 1])
-        with top_l:
-            st.markdown('<div class="brand-mark">AUTO · EDA</div>', unsafe_allow_html=True)
-        with top_r:
-            dark = st.toggle("🌙", value=st.session_state.dark_mode, help="Dark mode", label_visibility="collapsed")
-            if dark != st.session_state.dark_mode:
-                st.session_state.dark_mode = dark
-                st.rerun()
+        st.markdown('<div class="brand-mark">AUTO · EDA</div>', unsafe_allow_html=True)
+
+        dark = st.toggle("🌙 Dark mode", value=st.session_state.dark_mode)
+        if dark != st.session_state.dark_mode:
+            st.session_state.dark_mode = dark
+            st.rerun()
 
         # API key: loaded silently from .env / Streamlit secrets when present.
         # Only shown as an input if no key is configured anywhere.
