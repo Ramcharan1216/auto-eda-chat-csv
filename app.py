@@ -72,7 +72,7 @@ DARK_MODE_CSS = """
     }
     div[data-testid="stTab"][aria-selected="true"] p,
     div[data-testid="stTab"][aria-selected="true"] span {
-        color: #4da3ff !important;
+        color: #818cf8 !important;
     }
 
     [data-testid="stSidebar"] {
@@ -87,8 +87,8 @@ DARK_MODE_CSS = """
     }
     .stFileUploader > section:hover,
     div[data-testid="stFileUploader"] > section:hover {
-        border-color: #4da3ff !important;
-        background: rgba(77, 163, 255, 0.06) !important;
+        border-color: #818cf8 !important;
+        background: rgba(129, 140, 248, 0.06) !important;
     }
 
     [data-testid="stChatMessage"] {
@@ -158,6 +158,14 @@ KIND_LABELS = {
     ID_LIKE: "🔑 Identifier",
 }
 
+# Built into Plotly already, so these load instantly with zero network
+# dependency -- good for "try it before you upload your own file".
+SAMPLE_DATASETS = {
+    "sample-iris": {"label": "🌷 Iris flowers", "loader": lambda: px.data.iris()},
+    "sample-tips": {"label": "🍽️ Restaurant tips", "loader": lambda: px.data.tips()},
+    "sample-gapminder": {"label": "🌍 Gapminder (country stats)", "loader": lambda: px.data.gapminder()},
+}
+
 
 def _init_state():
     """Everything the sidebar history + theme toggle needs, set up once."""
@@ -223,6 +231,89 @@ def render_charts(df, profile):
         with cols[i % 2]:
             with st.container(border=True):
                 st.plotly_chart(fig, use_container_width=True, key=chart_id)
+
+
+def render_column_deep_dive(df, profile):
+    with st.container(border=True):
+        st.markdown("##### Column Deep Dive")
+        column = st.selectbox("Pick a column to inspect", options=list(profile.column_profiles.keys()))
+        cp = profile.column_profiles[column]
+
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Type", KIND_LABELS.get(cp.kind, cp.kind))
+        m2.metric("Missing %", cp.missing_pct)
+        m3.metric("Unique values", cp.n_unique)
+
+        series = df[column].dropna()
+        if series.empty:
+            st.info("This column has no non-missing values to visualize.")
+        elif cp.kind in (NUMERIC,):
+            fig = px.histogram(series, x=column, nbins=30, title=f"Distribution of {column}")
+            st.plotly_chart(fig, use_container_width=True)
+        elif cp.kind in (DATETIME,):
+            counts = series.dt.to_period("M").astype(str).value_counts().sort_index()
+            fig = px.line(x=counts.index, y=counts.values, labels={"x": "Month", "y": "Count"}, title=f"{column} over time")
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            top = series.astype(str).value_counts().head(20).reset_index()
+            top.columns = [column, "count"]
+            fig = px.bar(top, x=column, y="count", title=f"Top values in {column}")
+            st.plotly_chart(fig, use_container_width=True)
+
+
+def render_correlation_heatmap(df):
+    numeric_df = df.select_dtypes(include="number")
+    with st.container(border=True):
+        st.markdown("##### Correlation Heatmap")
+        if numeric_df.shape[1] < 2:
+            st.info("Need at least two numeric columns to compute correlations.")
+            return
+        corr = numeric_df.corr(numeric_only=True)
+        fig = px.imshow(
+            corr, text_auto=".2f", color_continuous_scale="RdBu", zmin=-1, zmax=1,
+            aspect="auto",
+        )
+        fig.update_layout(margin=dict(t=10, l=10, r=10, b=10))
+        st.plotly_chart(fig, use_container_width=True)
+
+
+def render_outlier_detection(df):
+    numeric_df = df.select_dtypes(include="number")
+    with st.container(border=True):
+        st.markdown("##### Outlier Detection (IQR method)")
+        if numeric_df.empty:
+            st.info("No numeric columns to check for outliers.")
+            return
+
+        rows = []
+        for col in numeric_df.columns:
+            series = numeric_df[col].dropna()
+            if series.empty:
+                continue
+            q1, q3 = series.quantile(0.25), series.quantile(0.75)
+            iqr = q3 - q1
+            lower, upper = q1 - 1.5 * iqr, q3 + 1.5 * iqr
+            n_outliers = int(((series < lower) | (series > upper)).sum())
+            if n_outliers > 0:
+                rows.append({
+                    "Column": col,
+                    "Outliers": n_outliers,
+                    "% of values": round(100 * n_outliers / len(series), 2),
+                    "Normal range": f"{lower:,.2f} – {upper:,.2f}",
+                })
+
+        if not rows:
+            st.success("No significant outliers detected in numeric columns.")
+        else:
+            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+
+def render_deep_dive(df, profile):
+    render_column_deep_dive(df, profile)
+    st.write("")
+    render_correlation_heatmap(df)
+    st.write("")
+    render_outlier_detection(df)
 
 
 def _render_answer_result(result):
@@ -374,13 +465,24 @@ def main():
     active_key = st.session_state.active_dataset_key
 
     if active_key is None or active_key not in st.session_state.uploads:
-        st.info("👆 Upload a CSV to get started. Try any Kaggle dataset — Titanic, house prices, customer churn, etc.")
+        st.info("👆 Upload a CSV to get started, or jump in instantly with a sample dataset:")
+        s1, s2, s3 = st.columns(3)
+        for col, (key, sample) in zip((s1, s2, s3), SAMPLE_DATASETS.items()):
+            if col.button(sample["label"], key=f"load_{key}", use_container_width=True):
+                sample_df = sample["loader"]()
+                sample_bytes = sample_df.to_csv(index=False).encode("utf-8")
+                st.session_state.uploads[key] = {"name": f"{sample['label']}.csv", "bytes": sample_bytes}
+                if key not in st.session_state.upload_order:
+                    st.session_state.upload_order.insert(0, key)
+                st.session_state.active_dataset_key = key
+                st.rerun()
         return
 
     record = st.session_state.uploads[active_key]
 
-    with st.spinner("Reading and profiling your data..."):
+    with st.status("Reading and profiling your data...", expanded=False) as status:
         load_result = load_csv_cached(record["bytes"], record["name"])
+        status.update(label="Data loaded", state="complete")
 
     if load_result.error:
         st.error(f"Couldn't load this file: {load_result.error}")
@@ -404,8 +506,8 @@ def main():
         unsafe_allow_html=True,
     )
 
-    tab1, tab2, tab3, tab4 = st.tabs(
-        ["📋 Overview", "📊 Auto-Generated Charts", "🔍 Raw Data", "💬 Chat with your Data"]
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(
+        ["📋 Overview", "📊 Auto-Generated Charts", "🔬 Deep Dive", "🔍 Raw Data", "💬 Chat with your Data"]
     )
 
     with tab1:
@@ -417,10 +519,13 @@ def main():
         render_charts(df, profile)
 
     with tab3:
+        render_deep_dive(df, profile)
+
+    with tab4:
         with st.container(border=True):
             st.dataframe(df.head(200), use_container_width=True)
 
-    with tab4:
+    with tab5:
         render_chat(df, profile, active_key)
 
 
